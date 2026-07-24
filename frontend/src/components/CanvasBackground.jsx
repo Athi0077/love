@@ -113,7 +113,7 @@ const CanvasBackground = ({ scrollerRef }) => {
     resizeCanvas();
     drawFrame(0, 1);
     
-    console.log("[GSAP Debug] Multi-Sequence Engine Running. Total Frames:", totalFrames);
+    // console.log("[GSAP Debug] Multi-Sequence Engine Running. Total Frames:", totalFrames);
     
     const ctx_gsap = gsap.context(() => {
       const firstSection = scrollerRef.current.querySelector('section');
@@ -138,7 +138,7 @@ const CanvasBackground = ({ scrollerRef }) => {
           // Math to figure out WHICH frame inside that folder we need
           let localFrame = ((absoluteFrame - 1) % framesPerFolder) + 1;
 
-          console.log(`[Multi-Sequence] Progress: ${(self.progress * 100).toFixed(1)}% | Folder: ${folders[folderIdx]} | Frame: ${localFrame}`);
+          // console.log(`[Multi-Sequence] Progress: ${(self.progress * 100).toFixed(1)}% | Folder: ${folders[folderIdx]} | Frame: ${localFrame}`);
           
           drawFrame(folderIdx, localFrame);
         }

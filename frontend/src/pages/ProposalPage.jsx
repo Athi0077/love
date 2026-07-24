@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ChevronDown, Heart } from 'lucide-react';
+import { ChevronDown, Heart, Play, Pause } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -59,9 +59,37 @@ const ProposalPage = () => {
   
   const [accepted, setAccepted] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
 
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({ container: containerRef });
+
+  // Auto-scroll logic
+  useEffect(() => {
+    let animationFrameId;
+
+    const smoothScroll = () => {
+      if (containerRef.current && isAutoScrolling) {
+        const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+        
+        // Stop automatically if we reach the very bottom
+        if (Math.ceil(scrollTop + clientHeight) >= scrollHeight) {
+          setIsAutoScrolling(false);
+          return;
+        }
+
+        // Scroll down faster (approx 300px per second at 60fps)
+        containerRef.current.scrollTop += 5;
+        animationFrameId = requestAnimationFrame(smoothScroll);
+      }
+    };
+
+    if (isAutoScrolling) {
+      animationFrameId = requestAnimationFrame(smoothScroll);
+    }
+
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [isAutoScrolling]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -105,6 +133,34 @@ const ProposalPage = () => {
     
     fetchData();
   }, [username, proposalId, navigate]);
+
+  // Auto-scroll Tip Notification
+  useEffect(() => {
+    if (data && isUnlocked && !accepted) {
+      const timer = setTimeout(() => {
+        toast("🎬 Tip: Tap the play button below for a cinematic auto-scroll!", {
+          position: "bottom-center",
+          autoClose: 6000,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: false,
+          theme: "dark",
+          style: {
+            background: "rgba(236, 72, 153, 0.2)",
+            border: "1px solid rgba(236, 72, 153, 0.5)",
+            backdropFilter: "blur(10px)",
+            color: "#fbcfe8",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            textAlign: "center",
+            borderRadius: "1rem"
+          }
+        });
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [data, isUnlocked, accepted]);
 
   const handleNoHover = () => {
     if (accepted || !isNoVisible) return;
@@ -271,12 +327,21 @@ const ProposalPage = () => {
   return (
     <div 
       ref={containerRef}
-      className="h-screen overflow-y-auto snap-y snap-mandatory bg-dark-bg scroll-smooth hide-scrollbar relative"
+      className={`h-screen overflow-y-auto bg-dark-bg hide-scrollbar relative ${isAutoScrolling ? 'scroll-auto' : 'snap-y snap-mandatory scroll-smooth'}`}
     >
       <ToastContainer limit={1} />
       <CanvasBackground scrollerRef={containerRef} />
       <FloatingHearts />
       
+      {/* Auto Scroll Floating Button */}
+      <button
+        onClick={() => setIsAutoScrolling(!isAutoScrolling)}
+        className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all shadow-[0_0_15px_rgba(236,72,153,0.3)] hover:scale-110 active:scale-95"
+        title="Auto Scroll"
+      >
+        {isAutoScrolling ? <Pause size={24} /> : <Play size={24} />}
+      </button>
+
       {/* Section 1: Hello */}
       <Section>
         <motion.h1 
